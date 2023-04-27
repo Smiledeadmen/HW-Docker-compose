@@ -1,0 +1,35 @@
+version: '3.9'
+
+volumes:
+  pgdata:
+
+services:
+  postgredb:
+    image: postgres:latest
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./logs:/var/log
+    environment:
+      - POSTGRES_DB=netology_stocks_products
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=Ingrad2022
+
+  web:
+    build: .
+    command: bash -c "python manage.py migrate &&
+                      python manage.py collectstatic && 
+                      gunicorn stocks_products.wsgi:application --bind 0.0.0.0:8000"
+    expose:
+      - 8000
+    depends_on:
+      - postgredb
+
+  nginx:
+    build: ./nginx
+    ports:
+      - 5000:80
+    depends_on:
+      - web
